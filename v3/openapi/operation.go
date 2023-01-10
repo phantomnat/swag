@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-openapi/spec"
 	"golang.org/x/tools/go/loader"
 )
@@ -28,7 +29,7 @@ type RouteProperties struct {
 type Operation struct {
 	parser              *Parser
 	codeExampleFilesDir string
-	spec.Operation
+	openapi3.Operation
 	RouterProperties []RouteProperties
 }
 
@@ -59,32 +60,31 @@ func NewOperation(parser *Parser, options ...func(*Operation)) *Operation {
 	result := &Operation{
 		parser:           parser,
 		RouterProperties: []RouteProperties{},
-		Operation: spec.Operation{
-			OperationProps: spec.OperationProps{
-				ID:           "",
-				Description:  "",
-				Summary:      "",
-				Security:     nil,
-				ExternalDocs: nil,
-				Deprecated:   false,
-				Tags:         []string{},
-				Consumes:     []string{},
-				Produces:     []string{},
-				Schemes:      []string{},
-				Parameters:   []spec.Parameter{},
-				Responses: &spec.Responses{
-					VendorExtensible: spec.VendorExtensible{
-						Extensions: spec.Extensions{},
-					},
-					ResponsesProps: spec.ResponsesProps{
-						Default:             nil,
-						StatusCodeResponses: make(map[int]spec.Response),
-					},
-				},
-			},
-			VendorExtensible: spec.VendorExtensible{
-				Extensions: spec.Extensions{},
-			},
+		Operation: openapi3.Operation{
+			OperationID:  "",
+			Description:  "",
+			Summary:      "",
+			Security:     nil,
+			ExternalDocs: nil,
+			Deprecated:   false,
+			//Tags:         []string{},
+			//Consumes:     []string{},
+			//Produces:     []string{},
+			//Schemes:      []string{},
+			//Parameters:   []openapi3.Parameter{},
+			//
+			//Responses: &spec.Responses{
+			//	VendorExtensible: spec.VendorExtensible{
+			//		Extensions: spec.Extensions{},
+			//	},
+			//	ResponsesProps: spec.ResponsesProps{
+			//		Default:             nil,
+			//		StatusCodeResponses: make(map[int]spec.Response),
+			//	},
+			//},
+			//VendorExtensible: spec.VendorExtensible{
+			//	Extensions: spec.Extensions{},
+			//},
 		},
 		codeExampleFilesDir: "",
 	}
@@ -130,7 +130,7 @@ func (operation *Operation) ParseComment(comment string, astFile *ast.File) erro
 	case summaryAttr:
 		operation.Summary = lineRemainder
 	case idAttr:
-		operation.ID = lineRemainder
+		operation.OperationID = lineRemainder
 	case tagsAttr:
 		operation.ParseTagsComment(lineRemainder)
 	case acceptAttr:
@@ -148,7 +148,7 @@ func (operation *Operation) ParseComment(comment string, astFile *ast.File) erro
 	case securityAttr:
 		return operation.ParseSecurityComment(lineRemainder)
 	case deprecatedAttr:
-		operation.Deprecate()
+		operation.Deprecated = true
 	case xCodeSamplesAttr:
 		return operation.ParseCodeSample(attribute, commentLine, lineRemainder)
 	default:
@@ -329,19 +329,29 @@ func (operation *Operation) ParseParamComment(commentLine string, astFile *ast.F
 				param.Default = prop.Default
 				param.Example = prop.Example
 				param.Extensions = prop.Extensions
-				param.CommonValidations.Maximum = prop.Maximum
-				param.CommonValidations.Minimum = prop.Minimum
-				param.CommonValidations.ExclusiveMaximum = prop.ExclusiveMaximum
-				param.CommonValidations.ExclusiveMinimum = prop.ExclusiveMinimum
-				param.CommonValidations.MaxLength = prop.MaxLength
-				param.CommonValidations.MinLength = prop.MinLength
-				param.CommonValidations.Pattern = prop.Pattern
-				param.CommonValidations.MaxItems = prop.MaxItems
-				param.CommonValidations.MinItems = prop.MinItems
-				param.CommonValidations.UniqueItems = prop.UniqueItems
-				param.CommonValidations.MultipleOf = prop.MultipleOf
-				param.CommonValidations.Enum = prop.Enum
-				operation.Operation.Parameters = append(operation.Operation.Parameters, param)
+				toUint64 := func(in *int64) uint64 {
+					out := uint64(*in)
+					return out
+				}
+				toUint64P := func(in *int64) *uint64 {
+					out := toUint64(in)
+					return &out
+				}
+				param.WithSchema(&openapi3.Schema{
+					Max:          prop.Maximum,
+					Min:          prop.Minimum,
+					ExclusiveMax: prop.ExclusiveMaximum,
+					ExclusiveMin: prop.ExclusiveMinimum,
+					MaxLength:    toUint64P(prop.MaxLength),
+					MinLength:    toUint64(prop.MinLength),
+					Pattern:      prop.Pattern,
+					MaxItems:     toUint64P(prop.MaxItems),
+					MinItems:     toUint64(prop.MinItems),
+					UniqueItems:  prop.UniqueItems,
+					MultipleOf:   prop.MultipleOf,
+					Enum:         prop.Enum,
+				})
+				operation.Operation.Parameters = append(operation.Operation.Parameters, &openapi3.ParameterRef{Value: &param})
 			}
 
 			return nil
@@ -1129,15 +1139,13 @@ func (operation *Operation) AddResponse(code int, response *spec.Response) {
 }
 
 // createParameter returns swagger spec.Parameter for given  paramType, description, paramName, schemaType, required.
-func createParameter(paramType, description, paramName, objectType, schemaType string, required bool, enums []interface{}, collectionFormat string) spec.Parameter {
+func createParameter(paramType, description, paramName, objectType, schemaType string, required bool, enums []interface{}, collectionFormat string) openapi3.Parameter {
 	// //five possible parameter types. 	query, path, body, header, form
-	result := spec.Parameter{
-		ParamProps: spec.ParamProps{
-			Name:        paramName,
-			Description: description,
-			Required:    required,
-			In:          paramType,
-		},
+	result := openapi3.Parameter{
+		Name:        paramName,
+		Description: description,
+		Required:    required,
+		In:          paramType,
 	}
 
 	if paramType == "body" {
@@ -1146,19 +1154,25 @@ func createParameter(paramType, description, paramName, objectType, schemaType s
 
 	switch objectType {
 	case ARRAY:
-		result.Type = objectType
-		result.CollectionFormat = collectionFormat
-		result.Items = &spec.Items{
-			CommonValidations: spec.CommonValidations{
-				Enum: enums,
-			},
-			SimpleSchema: spec.SimpleSchema{
-				Type: schemaType,
+		result.Schema = &openapi3.SchemaRef{
+			Value: &openapi3.Schema{
+				Type:   objectType,
+				Format: collectionFormat,
+				Items: &openapi3.SchemaRef{
+					Value: &openapi3.Schema{
+						Enum: enums,
+						Type: schemaType,
+					},
+				},
 			},
 		}
 	case PRIMITIVE, OBJECT:
-		result.Type = schemaType
-		result.Enum = enums
+		result.Schema = &openapi3.SchemaRef{
+			Value: &openapi3.Schema{
+				Type: schemaType,
+				Enum: enums,
+			},
+		}
 	}
 	return result
 }

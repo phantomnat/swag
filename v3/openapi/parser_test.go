@@ -571,7 +571,7 @@ func TestParser_ParseGeneralAPITagDocs(t *testing.T) {
 		"@tag.docs.description Best example documentation"})
 	assert.NoError(t, err)
 
-	b, _ := json.MarshalIndent(parser.GetSwagger().Tags, "", "    ")
+	b, _ := json.MarshalIndent(parser.GetOpenAPI().Tags, "", "    ")
 	expected := `[
     {
         "description": "A test Tag",
@@ -613,7 +613,7 @@ func TestParser_ParseGeneralAPISecurity(t *testing.T) {
 		})
 		assert.NoError(t, err)
 
-		b, _ := json.MarshalIndent(parser.GetSwagger().SecurityDefinitions, "", "    ")
+		b, _ := json.MarshalIndent(parser.GetOpenAPI().SecurityDefinitions, "", "    ")
 		expected := `{
     "ApiKey": {
         "description": "some",
@@ -645,7 +645,7 @@ func TestParser_ParseGeneralAPISecurity(t *testing.T) {
 			"@securitydefinitions.oauth2.application OAuth2Application",
 			"@tokenUrl https://example.com/oauth/token"})
 		assert.NoError(t, err)
-		b, _ := json.MarshalIndent(parser.GetSwagger().SecurityDefinitions, "", "    ")
+		b, _ := json.MarshalIndent(parser.GetOpenAPI().SecurityDefinitions, "", "    ")
 		expected := `{
     "OAuth2Application": {
         "type": "oauth2",
@@ -667,7 +667,7 @@ func TestParser_ParseGeneralAPISecurity(t *testing.T) {
 			"@securitydefinitions.oauth2.implicit OAuth2Implicit",
 			"@authorizationurl https://example.com/oauth/authorize"})
 		assert.NoError(t, err)
-		b, _ := json.MarshalIndent(parser.GetSwagger().SecurityDefinitions, "", "    ")
+		b, _ := json.MarshalIndent(parser.GetOpenAPI().SecurityDefinitions, "", "    ")
 		expected := `{
     "OAuth2Implicit": {
         "type": "oauth2",
@@ -689,7 +689,7 @@ func TestParser_ParseGeneralAPISecurity(t *testing.T) {
 			"@securitydefinitions.oauth2.password OAuth2Password",
 			"@tokenUrl https://example.com/oauth/token"})
 		assert.NoError(t, err)
-		b, _ := json.MarshalIndent(parser.GetSwagger().SecurityDefinitions, "", "    ")
+		b, _ := json.MarshalIndent(parser.GetOpenAPI().SecurityDefinitions, "", "    ")
 		expected := `{
     "OAuth2Password": {
         "type": "oauth2",
@@ -720,7 +720,7 @@ func TestParser_ParseGeneralAPISecurity(t *testing.T) {
 			"@tokenUrl https://example.com/oauth/token",
 			"@authorizationurl https://example.com/oauth/authorize"})
 		assert.NoError(t, err)
-		b, _ := json.MarshalIndent(parser.GetSwagger().SecurityDefinitions, "", "    ")
+		b, _ := json.MarshalIndent(parser.GetOpenAPI().SecurityDefinitions, "", "    ")
 		expected := `{
     "OAuth2AccessCode": {
         "type": "oauth2",

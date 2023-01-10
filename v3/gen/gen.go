@@ -9,6 +9,7 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/ghodss/yaml"
+	"github.com/swaggo/swag/v3/openapi"
 )
 
 const (
@@ -56,18 +57,9 @@ func New(cfg *Config) *Gen {
 }
 
 func (g *Gen) Build() error {
-	doc := openapi3.T{}
-	doc.Info = &openapi3.Info{
-		ExtensionProps: openapi3.ExtensionProps{},
-		Title:          "",
-		Description:    "",
-		TermsOfService: "",
-		Contact:        nil,
-		License:        nil,
-		Version:        "",
-	}
+	p := openapi.New()
 
-	err := g.writeYAMLSwagger(g.config, &doc)
+	err := g.writeYAMLSwagger(g.config, p.GetOpenAPI())
 	if err != nil {
 		return err
 	}
