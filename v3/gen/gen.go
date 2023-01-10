@@ -1,4 +1,4 @@
-package genv3
+package gen
 
 import (
 	"encoding/json"
@@ -8,7 +8,6 @@ import (
 	"path"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/getkin/kin-openapi/openapi3gen"
 	"github.com/ghodss/yaml"
 )
 
@@ -67,8 +66,6 @@ func (g *Gen) Build() error {
 		License:        nil,
 		Version:        "",
 	}
-	//doc.Paths =
-	openapi3gen.NewGenerator()
 
 	err := g.writeYAMLSwagger(g.config, &doc)
 	if err != nil {

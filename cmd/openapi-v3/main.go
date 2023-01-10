@@ -7,8 +7,7 @@ import (
 	"strings"
 
 	"github.com/swaggo/swag"
-	"github.com/swaggo/swag/gen"
-	"github.com/swaggo/swag/genv3"
+	"github.com/swaggo/swag/v3/gen"
 	"github.com/urfave/cli/v2"
 )
 
@@ -119,8 +118,8 @@ var initFlags = []cli.Flag{
 		Usage: "This parameter can be used to name different swagger document instances. It is optional.",
 	},
 	&cli.StringFlag{
-		Name:  overridesFileFlag,
-		Value: gen.DefaultOverridesFile,
+		Name: overridesFileFlag,
+		//Value: gen.DefaultOverridesFile,
 		Usage: "File to read global type overrides from.",
 	},
 	&cli.BoolFlag{
@@ -159,7 +158,7 @@ func initAction(ctx *cli.Context) error {
 	//	logger = log.New(io.Discard, "", log.LstdFlags)
 	//}
 
-	return genv3.New(&genv3.Config{
+	return gen.New(&gen.Config{
 		InstanceName: ctx.String(instanceNameFlag),
 		OutputDir:    ctx.String(outputFlag),
 		OutputTypes:  outputTypes,
