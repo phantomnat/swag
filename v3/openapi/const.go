@@ -1,4 +1,4 @@
-package swag
+package openapi
 
 import (
 	"go/ast"
